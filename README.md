@@ -148,8 +148,9 @@ First, generate `.tsv` files to be used by tensorQTL. This is a table containing
 for one clone per sample, along with cromosome position coordintes and Infinium probe IDs.
 
 ```bash
-Rscript ./methQTL.R PBMC
-Rscript ./methQTL.R IPSC
+module load R/4.3 && Rscript scripts/build-covariates.R
+sbatch scripts/tensorQTL.sh IPSC
+sbatch scripts/tensorQTL.sh PBMC
 ```
 
 
@@ -218,3 +219,10 @@ Retrieved from `https://www.geneimprint.com/site/genes-by-species`
 - Manually find and replace diamond `?` characters
 - `sed 's/, /;/g' imprinting-genes.txt`
 - `sed -i 's/, /;/g' imprinting-genes.txt`
+
+
+## methQTL
+
+```bash
+
+```
