@@ -165,6 +165,7 @@ samplesheet <- meffil.create.samplesheet("/data/ADRD/2021_07_01.Methylation/Idat
 
 # README
 
+Code for analysis associated with the publication [_Characterization of DNA methylation in PBMCs and donor-matched iPSCs shows methylation is reset during stem cell reprogramming_](https://doi.org/10.1101/2024.12.13.627515 )
 
 ```bash
 
@@ -219,6 +220,7 @@ Retrieved from `https://www.geneimprint.com/site/genes-by-species`
 - Manually find and replace diamond `?` characters
 - `sed 's/, /;/g' imprinting-genes.txt`
 - `sed -i 's/, /;/g' imprinting-genes.txt`
+<<<<<<< HEAD
 
 
 ## methQTL
@@ -226,3 +228,6 @@ Retrieved from `https://www.geneimprint.com/site/genes-by-species`
 ```bash
 
 ```
+=======
+Methylation beta values are hosted on Zenodo: https://doi.org/10.5281/zenodo.15191371
+>>>>>>> 2a0039b00386b435cd98da10d9cd41a889ecef3a
