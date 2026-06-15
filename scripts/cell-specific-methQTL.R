@@ -11,9 +11,6 @@ dat.ipsc <- fread('methQTL/IPSC.cis_qtl_significant.txt')
 dat.pbmc <- fread('methQTL/PBMC.cis_qtl_significant.txt')
 
 annotation <- fread('DATA/EPIC.anno.GRCh38.tsv', select=c('probeID','GeneNames'))
-# annotation[, Gene := tstrsplit(GeneNames, split=';')[1]]
-# annotation <- annotation[Gene != '.']
-
 
 setnames(dat.ipsc, 'phenotype_id','probeID')
 setnames(dat.pbmc, 'phenotype_id','probeID')
@@ -157,15 +154,6 @@ dat[Domain == 'kegg', Description := paste0(Description, ' (KEGG)')]
 dt.plot <- dat[, .SD, .SDcols=c('Description','p.adjust','qvalue','Count','qsort','hj')]
 dt.plot[, celltype := 'PBMC']
 
-# g.pbmc <- ggplot(dat, aes(x=Count, y=Description, fill=qvalue)) + geom_bar(stat='identity') +
-#         theme_few() +
-#         scale_fill_viridis(limits=c(0,0.05), direction=-1) +
-#         geom_vline(xintercept=0) +
-#         labs(x='N Genes') +
-#         labs(y='Term') +
-#         labs(title='PBMC-specific MethQTL Enrichment Analysis')
-
-
 # Plot IPSC terms
 
 dat <- copy(ipsc.GO[p.adjust <= 0.05])
@@ -191,13 +179,6 @@ dt.plot2[, celltype := 'iPSC']
 dt <- rbindlist(list(dt.plot, dt.plot2))
 
 
-# g.ipsc <- ggplot(dat, aes(x=Count, y=Description, fill=qvalue)) + geom_bar(stat='identity') +
-#         theme_few() +
-#         scale_fill_viridis(limits=c(0,0.05), direction=-1) +
-#         geom_vline(xintercept=0) +
-#         labs(x='N Genes') +
-#         labs(y='Term') +
-#         labs(title='IPSC-specific MethQTL Enrichment Analysis')
 
 dt[, celltype := factor(celltype, levels=c('PBMC','iPSC'))]
 g <- ggplot(dt, aes(x=Count, y=Description, fill=qvalue)) + geom_bar(stat='identity') +
@@ -212,12 +193,6 @@ g <- ggplot(dt, aes(x=Count, y=Description, fill=qvalue)) + geom_bar(stat='ident
 
 ggsave(g, file='PLOTS/METHQTL/Enrichment.png', width=30, height=12, units='cm')
 ggsave(g, file='PLOTS/METHQTL/Enrichment.pdf', width=30, height=12, units='cm')
-
-
-##
-
-# Load genotypes
-
 
 
 

@@ -24,7 +24,7 @@ betas <- foreach(celltype=c('PBMC','IPSC'), .combine='rbind') %do% {
 
 
 
-if(FALSE) {
+
 # Calculate mean beta value per probe per cell type
 betas.2 <- betas[, list('mean.beta'=mean(beta),
                         'sd.beta'=sd(beta),
@@ -35,11 +35,11 @@ betas.2 <- betas[, list('mean.beta'=mean(beta),
                         '0.025.beta'=quantile(beta, 0.025)),
                 , by=list(POS,celltype)]
 
-    fwrite(betas.2, file='DATA/beta-quantiles.tsv', quote=F, row.names=F, col.names=T, sep='\t')
-}
+fwrite(betas.2, file='DATA/beta-quantiles.tsv', quote=F, row.names=F, col.names=T, sep='\t')
+
 
 if(! file.exists('IMPRINTING/imprinting_betas.RDS')) {
-betas.2 <- dcast(betas, POS + Donor ~ celltype, value.var='beta')   
+betas.2 <- dcast(betas, POS + Donor ~ celltype, value.var='beta')
 betas.2 <- betas.2[!is.na(IPSC) & ! is.na(PBMC)]
 
 # Add in position and gene annotation
@@ -81,42 +81,3 @@ g <- ggplot(betas.2, aes(color=imprinting, x=delta)) +
 ggsave(g, file='IMPRINTING/imprinting-density.png', width=20, height=12, units='cm')
 ggsave(g, file='IMPRINTING/imprinting-density.svg', width=20, height=12, units='cm')
 ggsave(g, file='IMPRINTING/imprinting-density.pdf', width=20, height=12, units='cm')
-
-# median.betas <- betas.2[, list('median_delta'=median(IPSC-PBMC)), by=list(probeID, chrm, start, Genes, imprinting)]
-
-# 
-
-# g <- ggplot(median.betas, aes(color=imprinting, x=median_delta)) + 
-#     geom_line(stat='density',  alpha=0.5, size=1.5) +
-#     theme_few() +
-#     theme(legend.position='bottom') +
-#     labs(y='Density', x='Median Methylation Reduction in iPSCs\n(donor-specific iPSC minus PBMC methylation, per probe)', color=NULL)
-
-
-# checkImprintingGene <- function(DT, gene, parent) {
-#     dat <- copy(DT[Genes %like% paste0(gene, ';|', gene, '$')])
-#     g <- ggplot(dat, aes(x=celltype, y=`0.5.beta`)) + geom_boxplot() +
-#     labs(title=paste0(gene, ' | ', parent), y='Median methylation beta') +
-#     theme_few()
-#     ggsave(g, file=paste0('IMPRINTING/', gene, '.png'), width=12, height=12, units='cm')
-# }
-
-# for(i in 1:nrow(imprinting_genes)) {
-#     gene_name <- imprinting_genes[i,]$Gene
-#     lineage <- imprinting_genes[i,]$ExpressedAllele
-#     checkImprintingGene(betas.2, gene_name, lineage)
-# }
-
-# rm(betas); gc()
-# # Get EPIC annotation gene list from duplicat -> unique list per row
-# betas.2[, 
-# betas.2[Genes == '.', Genes := NA]
-# betas.2[, GeneNames := NULL]
-# setcolorder(betas.2, c('probeID','Genes','chrm','start','PBMC','iPSC'))
-
-# # Exclude probes only passing QC in a single group
-# betas.2 <- betas.2[!is.na(PBMC) & ! is.na(iPSC)]
-# fwrite(betas.2, 'methQTL/mean-betas.tsv.gz', sep='\t')
-# } else {
-#     betas.2 <- fread('methQTL/mean-betas.tsv.gz')
-# }
