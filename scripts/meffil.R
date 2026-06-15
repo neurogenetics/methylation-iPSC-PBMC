@@ -33,8 +33,8 @@ arglist = list(
 usage_string <- "Rscript meffil.R "
 args <- optparse::parse_args(OptionParser(usage = usage_string, arglist))
 
-# args <- list(); args$celltype <- 'ipsc'; args$clobber <- FALSE; args$threads <- 2
-# args <- list(); args$celltype <- 'pbmc'; args$clobber <- FALSE; args$threads <- 2
+# args <- list(); args$celltype <- 'ipsc'; args$clobber <- FALSE; args$threads <- 12
+# args <- list(); args$celltype <- 'pbmc'; args$clobber <- TRUE; args$threads <- 12
 
 ####################################################################################################
 # Load libraries
@@ -233,8 +233,6 @@ if(! file.exists(meffil_qc1_obj_file) | args$clobber==TRUE) {
 
 
 
-
-
 ####################################################################################################
 # Get samples that fail QC
 ####################################################################################################
@@ -379,14 +377,16 @@ if(!file.exists(meffil_beta_object_file) | args$clobber == TRUE) {
 # Save all-samples betas tsv
 ####################################################################################################
 
-    meffil.beta.dt <- as.data.table(meffil.beta)
-    fwrite(data.table(POS=rownames(meffil.beta), meffil.beta.dt), file=paste0('MEFFIL/', celltype, '.beta-ALL.tsv'), sep='\t', row.names=F,col.names=T, quote=F)
+meffil.beta.dt <- as.data.table(meffil.beta)
+fwrite(data.table(POS=rownames(meffil.beta), meffil.beta.dt), file=paste0('MEFFIL/', celltype, '.beta-ALL.tsv'), sep='\t', row.names=F,col.names=T, quote=F)
 
 ## Check cell type heterogeneity
-meffil.cellcounts <- meffil.estimate.cell.counts.from.betas(meffil.beta, 'andrews and bakulski cord blood')
-meffil.cellcounts <- as.data.table(meffil.cellcounts, keep.rownames=T)
-fwrite(meffil.cellcounts, file='cellcounts.csv', quote=F)
-
+if(celltype=='PBMC') {
+    meffil.cellcounts <- meffil.estimate.cell.counts.from.betas(meffil.beta, 'andrews and bakulski cord blood')
+    meffil.cellcounts <- as.data.table(meffil.cellcounts, keep.rownames=T)
+    setnames(meffil.cellcounts, 'rn', 'sample')
+    fwrite(meffil.cellcounts, file='DATA/pbmc-cellcounts.csv', sep=',', quote=F)
+}
 
 ####################################################################################################
 # Calculate methylation PCs
@@ -481,6 +481,9 @@ sex_covs <- data.frame('Sex'=celltype_samplesheet$Sex)
 rownames(sex_covs) <- celltype_samplesheet$Donor.ID
 
 
+
+
+
 # Recalculate Methylation with (slightly smaller) complete sample set
 meffil.methyl.pcs.2 <- meffil.methylation.pcs(meffil.beta, 
                                             probe.range = 20000, 
@@ -508,6 +511,13 @@ colnames(pc_genotype_covs) <- paste0('GENO_', colnames(pc_genotype_covs))
 stopifnot(identical(rownames(pc_methylation_covs), rownames(genetics_pcs)))
 
 ewas_covariates <- as.data.frame(cbind(sex_covs, pc_methylation_covs, pc_genotype_covs))
+
+# Add celltype covariates for PBMCs
+if(celltype=='PBMC') {
+    setkey(meffil.cellcounts, sample)
+    meffil.cellcounts <- meffil.cellcounts[rownames(ewas_covariates)]
+    ewas_covariates <- cbind(ewas_covariates, meffil.cellcounts[, -c('sample')])
+}
 
 ewas.ret <- meffil.ewas(meffil.beta, variable=ewas_variable, covariates=ewas_covariates)
 

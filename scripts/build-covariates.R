@@ -13,6 +13,7 @@ EPIC <- fread('DATA/EPIC.anno.GRCh38.tsv', select=c('probeID','chrm','start'))
 # sex
 # age
 # population stratification principal components 1-10. 
+# Cell type prediction proportions
 genetic_pc_file <- 'DATA/GENOTYPES/pruned_genetic_pc.txt'
 genetic_pcs <- fread(genetic_pc_file) # 1-10
 setnames(genetic_pcs, gsub('^PC', 'Geno_PC', colnames(genetic_pcs)))
@@ -31,8 +32,18 @@ pbmc_samplesheet <- pbmc_samplesheet[, .SD, .SDcols=c('Donor.ID','age','Sex')]
 
 
 ipsc_covs <- merge(genetic_pcs, ipsc_samplesheet, by.x='FID', by.y='Donor.ID')
+
+
+
+pbmc_celltypes <- fread('DATA/pbmc-cellcounts.csv')
+setkey(pbmc_celltypes, sample)
+
 pbmc_covs <- merge(genetic_pcs, pbmc_samplesheet, by.x='FID', by.y='Donor.ID')
 
+pbmc_celltypes <- pbmc_celltypes[pbmc_covs$FID]
+pbmc_celltypes[, sample := NULL]
+
+pbmc_covs <- cbind(pbmc_covs, pbmc_celltypes)
 
 
 # iPSCs betas subset to match

@@ -65,7 +65,7 @@ usable_samples <- intersect(samples_with_genotypes, colnames(betas))
 
 betas <- betas[, .SD, .SDcols=c('#chr', 'start', 'end', 'phenotype_id', usable_samples)]
 
-fwrite(betas, paste0('tensorQTL/', celltype, '.methqtl-betas.bed'), quote=F, row.names=F, col.names=T, sep='\t')
+fwrite(betas, paste0('methQTL/', celltype, '.methqtl-betas.bed'), quote=F, row.names=F, col.names=T, sep='\t')
 
 quit()
 
