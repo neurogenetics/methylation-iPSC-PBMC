@@ -1,0 +1,104 @@
+Bootstrap: docker
+From: r-base:4.3.0
+
+%post
+    apt-get update && apt-get install -y \
+        libcurl4-openssl-dev \
+        libssl-dev 
+        libxml2-dev 
+        libssh2-1-dev 
+        libcairo2-dev 
+        libxt-dev 
+        tk-dev 
+        libmariadbclient-dev \
+        libpq-dev 
+        libsqlite3-dev 
+        libmariadbd-dev 
+        libblas-dev 
+        liblapack-dev 
+        gfortran \
+        gcc 
+        g++ 
+        make 
+        libreadline-dev \
+        zlib1g-dev 
+        libbz2-dev 
+        liblzma-dev 
+        libpcre3-dev 
+        locales 
+        libicu-dev 
+        dirmngr \
+        gnupg \
+        wget 
+        zip 
+        apt-transport-https \
+        ca-certificates 
+        software-properties-common \
+        libncurses5-dev  \
+        libncursesw5-dev \
+        r-base-dev 
+        curl 
+        r-cran-base64enc \
+        r-cran-rcurl \
+        libxml2 
+        libfontconfig1-dev \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
+
+
+    apt-get install -y \
+        libssl-dev 
+        libcurl4-openssl-dev \
+        libxml2-dev 
+        libfontconfig1-dev \
+        libharfbuzz-dev 
+        libfribidi-dev 
+        libfreetype6-dev 
+        libpng-dev \
+        libtiff5-dev 
+        libjpeg-dev 
+        cmake 
+        libcairo2-dev
+
+    # fix UTF warning message
+    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen en_US.utf8
+    /usr/sbin/update-locale LANG=en_US.UTF-8
+
+    # Fix /etc/passwd warning message
+    echo "root:x:0:0:root:/root:/bin/bash" > /etc/passwd
+    echo "user:x:1000:1000:user:/home/user:/bin/bash" >> /etc/passwd
+
+    # Install R packages
+    R --no-echo -e "install.packages('data.table', repos='http://cran.us.r-project.org')"
+    R --no-echo -e "install.packages('R.utils', repos='http://cran.us.r-project.org')"
+    R --no-echo -e "install.packages('ggplot2', repos='http://cran.us.r-project.org')"
+    R --no-echo -e "install.packages('foreach', repos='http://cran.us.r-project.org')"
+    R --no-echo -e "install.packages('doMC', repos='http://cran.us.r-project.org')"
+    R --no-echo -e "install.packages('ggthemes', repos='http://cran.us.r-project.org')"
+    R --no-echo -e "install.packages('ggrepel', repos='http://cran.us.r-project.org')"
+    R --no-echo -e "install.packages('optparse', repos='http://cran.us.r-project.org')"
+    R --no-echo -e "install.packages('BiocManager', repos='http://cran.us.r-project.org')"
+    R --no-echo -e "install.packages('devtools', repos='http://cran.us.r-project.org')"
+    R --no-echo -e "install.packages('qqman', repos='http://cran.us.r-project.org')"
+    R --no-echo -e "BiocManager::install('minfiData')"
+    R --no-echo -e "devtools::install_github('markgene/maxprobes')"
+    R --no-echo -e "devtools::install_github('perishky/meffil')"
+
+
+    # Get plink
+    wget https://s3.amazonaws.com/plink1-assets/plink_linux_x86_64_20231211.zip
+    unzip plink_linux_x86_64_20231211.zip plink
+    mkdir -p /app
+    mv plink /app
+    rm plink_linux_x86_64_20231211.zip
+
+    # Get king
+    wget https://www.kingrelatedness.com/Linux-king.tar.gz
+    tar -zxf Linux-king.tar.gz 
+    mv king /app
+    rm Linux-king.tar.gz
+
+%environment
+    export LC_ALL=en_US.UTF-8
+    export LANG=en_US.UTF-8
+    export R_LIBS_USER=~/R/library/
