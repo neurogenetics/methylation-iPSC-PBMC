@@ -26,7 +26,7 @@ We use a `tensorqtl` image pulled from Broad Institute (`francois4/tensorqtl:1.0
 - subsetting to samples with genotype data
 - running EWAS for iPSC and PBMC datasets
 
-[`plot_EWAS.R`](plot_EWAS.R) generates QQ plots, manhattan plots, and methylation plots as a function of age (Figure 3).
+[`plot-EWAS.R`](plot-EWAS.R) generates QQ plots, manhattan plots, and methylation plots as a function of age (Figure 3).
 
 
 
