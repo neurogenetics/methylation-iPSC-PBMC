@@ -1,4 +1,7 @@
 # README
+This repository contains code associated with the manuscript _Characterization of DNA methylation in PBMCs and donor-matched iPSCs shows age-related methylation is reset during stem cell reprogramming_  by Reed et al.
+
+Methylation beta values are hosted on [Zenodo](https://doi.org/10.5281/zenodo.15191371).
 
 ## Container
 A singularity container was used for the `meffil` environment due to complicated installation / dependencies. `plink` and `king` are also available in the singularity container. 
@@ -83,14 +86,5 @@ wget ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/QTS000016/QTD000361/QT
 #iPSCORE naive iPSC gene counts expression eQTL
 wget ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/QTS000017/QTD000366/QTD000366.all.tsv.gz
 ```
-and subset to Bonferroni-adjusted significance.
 
-|   Study   |  N rows   | Bonferroni-adjusted threshold   |
-|-----------|-----------|-----------|
-| QTD000361 | 143317269 | `0.05/143317269` = `3.488763e-10` |
-| QTD000366 | 142812959 | `0.05/142812959` = `3.501083e-10` |
-| QTD000399 | 162075245 | `0.05/162075245` = `3.084987e-10` |
-
-[`filter-eqtl-threshold.R`](filter-eqtl-threshold.R) performs Bonferroni-adjustment on each table separately and subsets significant rows. 
-
-[`intersect-eqtl-lists.R`](intersect-eqtl-lists.R) plots eQTL intersection (Figure 4E).
+[`filter-eqtl-threshold.R`](filter-eqtl-threshold.R) performs Bonferroni-adjustment on each table separately and subsets significant rows. to be plotted with [`intersect-eqtl-lists.R`](intersect-eqtl-lists.R) (Figure 4E).
