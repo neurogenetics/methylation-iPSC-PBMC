@@ -37,7 +37,7 @@ betas.2 <- betas[, list('mean.beta'=mean(beta),
 
 fwrite(betas.2, file='DATA/beta-quantiles.tsv', quote=F, row.names=F, col.names=T, sep='\t')
 
-
+# Get methylation beta estimates at imprinting-specific sites
 if(! file.exists('IMPRINTING/imprinting_betas.RDS')) {
 betas.2 <- dcast(betas, POS + Donor ~ celltype, value.var='beta')
 betas.2 <- betas.2[!is.na(IPSC) & ! is.na(PBMC)]
@@ -71,6 +71,7 @@ betas.2[, imprinting := factor(imprinting, levels=c('Probes for Imprinting Genes
 saveRDS(betas.2, file='IMPRINTING/imprinting_betas.RDS')
 } else { betas.2 <- readRDS('IMPRINTING/imprinting_betas.RDS') }
 
+# Plot densities
 g <- ggplot(betas.2, aes(color=imprinting, x=delta)) + 
     geom_line(stat='density',  alpha=0.5, size=1.5) +
     theme_few() +

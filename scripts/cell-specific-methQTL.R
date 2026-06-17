@@ -7,22 +7,24 @@ library(ggplot2)
 library(viridis)
 library(ggthemes)
 
+# Import significant cis-methQTL tables
 dat.ipsc <- fread('methQTL/IPSC.cis_qtl_significant.txt')
 dat.pbmc <- fread('methQTL/PBMC.cis_qtl_significant.txt')
 
+# Import EPIC annotation
 annotation <- fread('DATA/EPIC.anno.GRCh38.tsv', select=c('probeID','GeneNames'))
 
+# Reformat and merge tables
 setnames(dat.ipsc, 'phenotype_id','probeID')
 setnames(dat.pbmc, 'phenotype_id','probeID')
 setkey(dat.ipsc, probeID)
 setkey(dat.pbmc, probeID)
-
 dat.pbmc <- merge(dat.pbmc, annotation)
 dat.ipsc <- merge(dat.ipsc, annotation)
 
 
+# Function to process EPIC annotation to split gene names by semicolon and return a unique sorted vector
 expand_flatten_symbols <- function(x, delim=';') {
-    # x = vector where each entry is semicolon-separated list of genes
     x <- unique(x)
     genes <- lapply(x, strsplit, split=';')
     genes2 <- do.call(c, unlist(genes, recursive=FALSE))
@@ -34,13 +36,13 @@ ipsc.genes <- expand_flatten_symbols(dat.ipsc$GeneNames)
 pbmc.genes <- expand_flatten_symbols(dat.pbmc$GeneNames)
 all.genes <-  expand_flatten_symbols(annotation$GeneNames)
 
-
+# function to convert entrez ID to gene symbol
 symbol_to_entrez <- function(symbols) {
     entrez <- mapIds(org.Hs.eg.db, keys = symbols, column = "ENTREZID",keytype="SYMBOL")
     return(unique(unlist(entrez)))
 }
 
-
+# Convenience wrapper to conduct GO and KEGG analyses in a loop
 getGO <- function(entrez_list, all_gene_list, enrich_pvalue=0.05) {
     desired_cols <- c('ID','Description','GeneRatio','BgRatio','pvalue','p.adjust','qvalue','geneID','Count','group')
     d1 <- enrichGO(gene          = entrez_list,
@@ -110,10 +112,11 @@ getGO <- function(entrez_list, all_gene_list, enrich_pvalue=0.05) {
 
 enrich_pvalue <- 0.05
 
+# Determine genes uniquely identified in iPSC data or in PBMC data
 ipsc.only.symbol <- sort(unique(base::setdiff(ipsc.genes, pbmc.genes)))
 pbmc.only.symbol <- sort(unique(base::setdiff(pbmc.genes, ipsc.genes)))
 
-
+# Get entrez IDs for global ipsc, global pbmc, or combined (denominator for enrichment analyses)
 ipsc.entrez <- symbol_to_entrez(ipsc.genes)
 pbmc.entrez <- symbol_to_entrez(pbmc.genes)
 all.entrez <- symbol_to_entrez(all.genes)
@@ -131,8 +134,7 @@ ipsc.GO <- getGO(ipsc.only.entrez, all.entrez, enrich_pvalue=0.05)
 pbmc.GO <- getGO(pbmc.only.entrez, all.entrez, enrich_pvalue=0.05)
 
 
-# Plot PBMC terms
-
+# Generate ggplot object for PBMC terms
 dat <- copy(pbmc.GO[p.adjust <= 0.05])
 dat[, 'qsort' := -1*qvalue]
 setnames(dat, 'group', 'Domain')
@@ -154,8 +156,7 @@ dat[Domain == 'kegg', Description := paste0(Description, ' (KEGG)')]
 dt.plot <- dat[, .SD, .SDcols=c('Description','p.adjust','qvalue','Count','qsort','hj')]
 dt.plot[, celltype := 'PBMC']
 
-# Plot IPSC terms
-
+# Generate ggplot object for IPSC terms
 dat <- copy(ipsc.GO[p.adjust <= 0.05])
 dat[, 'qsort' := -1*qvalue]
 setnames(dat, 'group', 'Domain')
@@ -176,11 +177,12 @@ dat[Domain == 'kegg', Description := paste0(Description, ' (KEGG)')]
 
 dt.plot2 <- dat[, .SD, .SDcols=c('Description','p.adjust','qvalue','Count','qsort','hj')]
 dt.plot2[, celltype := 'iPSC']
+
+# Merge into combined object
 dt <- rbindlist(list(dt.plot, dt.plot2))
-
-
-
 dt[, celltype := factor(celltype, levels=c('PBMC','iPSC'))]
+
+# Generate combined enrichment analysis plot
 g <- ggplot(dt, aes(x=Count, y=Description, fill=qvalue)) + geom_bar(stat='identity') +
         theme_few() +
         scale_fill_viridis(limits=c(0,0.05), direction=-1) +
@@ -194,8 +196,8 @@ g <- ggplot(dt, aes(x=Count, y=Description, fill=qvalue)) + geom_bar(stat='ident
 ggsave(g, file='PLOTS/METHQTL/Enrichment.png', width=30, height=12, units='cm')
 ggsave(g, file='PLOTS/METHQTL/Enrichment.pdf', width=30, height=12, units='cm')
 
-
-
+# Prepare tables for figure 5D
+# PBMC 
 dat.pbmc <- fread('methQTL/PBMC.cis_qtl_significant.txt', select=c('phenotype_id','slope'))
 pbmc.beta <- fread('MEFFIL/PBMC.beta.tsv')
 sampleids <- colnames(pbmc.beta)[-1]
@@ -206,8 +208,7 @@ gc()
 dat.pbmc <- merge(pbmc.beta, dat.pbmc, by.x='POS',by.y='phenotype_id')
 dat.pbmc[, celltype := 'PBMC']
 
-
-
+# iPSC
 dat.ipsc <- fread('methQTL/IPSC.cis_qtl_significant.txt', select=c('phenotype_id','slope'))
 ipsc.beta <- fread('MEFFIL/IPSC.beta.tsv')
 sampleids <- colnames(ipsc.beta)[-1]
@@ -219,6 +220,7 @@ dat.ipsc <- merge(ipsc.beta, dat.ipsc, by.x='POS',by.y='phenotype_id')
 gc()
 dat.ipsc[, celltype := 'iPSC']
 
+# Combine cell types and plot
 dat <- rbindlist(list(dat.pbmc, dat.ipsc))
 
 g2 <- ggplot(dat, aes(x=meanMethylationBin, y=abs(slope), fill=celltype)) + geom_boxplot(outlier.shape=21, outlier.stroke=0) +

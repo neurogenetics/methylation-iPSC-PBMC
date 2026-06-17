@@ -133,8 +133,7 @@ format_samplesheet <- function(idat_dir, sampleinfo_csv, celltype) {
     samplesheet[, Sample_Name := Name]                      # Rename Sample_Name to match Name (in plink data)
     samplesheet <- samplesheet[!duplicated(samplesheet)]    # Ensure no duplicates
     return(samplesheet)
-    #fwrite(samplesheet, file=ipsc_samplesheet_file, row.names=F, col.names=T, sep='\t', quote=F)
-    #rm(samplesheet, sampleinfo)
+
 }
 
 # Prepare IPSC samplesheet
@@ -549,29 +548,16 @@ EWAS.dt[, 'CHR' := tstrsplit(chrm, split='chr')[[2]]]
 EWAS.dt <- EWAS.dt[CHR %in% as.character(1:22)]
 EWAS.dt[, 'CHR' := as.numeric(CHR)]
 
-# Format for qqman
 setnames(EWAS.dt, 'start', 'BP')
 setnames(EWAS.dt, 'p', 'P')
 setkey(EWAS.dt, CHR, BP, probeID, P)
 
-# # Plot QQ Plot
-# png(paste0('EWAS/', celltype, '/qq.png'))
-# qq(EWAS.dt$P)
-# dev.off()
-
-# # Plot Manhattan
-# png(paste0('EWAS/', celltype, '/manhattan.png'), width = 1800, height = 480, units='px')
-# manhattan(EWAS.dt)
-# dev.off()
 
 
 
 # Save tsv output
 EWAS.out <- EWAS.dt[, .SD, .SDcols=c('CHR','BP','probeID','P')]
 fwrite(EWAS.out , file=paste0('EWAS/', celltype, '.tsv'), row.names=F, col.names=T, sep='\t', quote=F)
-
-# g <- ggplot(EWAS.dt, aes(x=start, y=-1*log10(p))) + geom_point() + facet_grid(.~CHR, scales='free_x', space='free_x')
-# ggsave(g, file=paste0(meffil_EWAS_dir, '/', celltype, '_EWAS_manhattan.png'), width=55, height=15, units='cm')
 
 
 quit(status=0)

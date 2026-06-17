@@ -5,8 +5,11 @@
 
 library(data.table)
 
-gene_id_file <- 'DATA/EPIC-gene-ids.txt'
 
+# Create simplified annotation lookup table with two columns
+# Col1 = probeID
+# Col2 = Gene(s), semicolon-delimited if multiple
+gene_id_file <- 'DATA/EPIC-gene-ids.txt'
 if(! file.exists(gene_id_file)) {
 
     EPIC <- fread(gene_id_file)
@@ -26,7 +29,7 @@ if(! file.exists(gene_id_file)) {
     gc()
 } 
 
- EPIC <- fread(gene_id_file)
+EPIC <- fread(gene_id_file)
 
 add_ids <- function(filename) {
     dat.tmp <- fread(filename)
@@ -40,7 +43,6 @@ add_ids <- function(filename) {
     return(NULL)
 } 
 
-add_ids('methQTL/IPSC.cis_qtl_significant.txt')
-add_ids('methQTL/PBMC.cis_qtl_significant.txt')
+# Add ids 
 add_ids('methQTL/IPSC.cis_qtl.txt')
-add_ids('methQTL/PBMC.cis_qtl.txt')
+add_ids('methQTL/PBMC.cis_qtl_with_celltypes.txt')

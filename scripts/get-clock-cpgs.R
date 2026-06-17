@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 
+# Extract clock-specific CpG lists and print to text files
+
 library(ExperimentHub)
 library(data.table)
 eh <- ExperimentHub()
