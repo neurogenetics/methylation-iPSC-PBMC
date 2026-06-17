@@ -1,17 +1,15 @@
 # README
 
 ## Container
-A singularity container was used for the `meffil` environment due to complicated installation / dependencies. `plink` and `king` are also available in the singularity container. The singularitry definition file [`meffil.def`](meffil.def) includes instructions to build the container.
+A singularity container was used for the `meffil` environment due to complicated installation / dependencies. `plink` and `king` are also available in the singularity container. 
 
-A pre-built container is hosted at `quay.io` and can be pulled using the following command if you have singularity available on your system:
-
-/usr/local/apps/tensorqtl/1.0.9/libexec/TensorQTL-1.0.9_from_docker.sif
-
+The singularitry definition files [`meffil.def`](meffil.def) and [`tensorqtl.def`](tensorqtl.def) include container specifications. A pre-built images of our `meffil` environment is available at `quay.io` and can be  pulled using the following commands if you have singularity available on your system:
 
 ```bash
 singularity pull oras://quay.io/datatecnica/meffil
-singularity pull oras://quay.io/datatecnica/tensorqtl
 ```
+
+We use a `tensorqtl` image pulled from Broad Institute (`francois4/tensorqtl:1.0.9`).
 
 ## Genotype preparation
 
