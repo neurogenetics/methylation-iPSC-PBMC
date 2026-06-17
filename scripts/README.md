@@ -13,7 +13,7 @@ We use a `tensorqtl` image pulled from Broad Institute (`francois4/tensorqtl:1.0
 
 ## Genotype preparation
 
-[`prep-plink`](prep-plink) conducts LD-pruning of variants using `plink` and generates PCs with `king` to use as covariates for `meffil` and `tensorQTL`.
+[`prep-plink.sh`](prep-plink.sh) conducts LD-pruning of variants using `plink` and generates PCs with `king` to use as covariates for `meffil` and `tensorQTL`.
 
 ## EWAS
 
