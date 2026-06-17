@@ -46,7 +46,7 @@ We use a `tensorqtl` image pulled from Broad Institute (`francois4/tensorqtl:1.0
 
 ## Clock analysis
 
-[`get-clock-cpgs.R`](get-clock-cpgs.R) is a convenience script to extract lists of CpGs from R's `methylclockData` datasets in `ExperimentHub`. It generates a text file of CpGs for each clock analyzed. Used to generate plots by [`plot-methQTL-clocks.R`](scripts/plot-methQTL-clocks.R) (Figure 2).
+[`get-clock-cpgs.R`](get-clock-cpgs.R) is a convenience script to extract lists of CpGs from R's `methylclockData` datasets in `ExperimentHub`. It generates a text file of CpGs for each clock analyzed. Used to generate plots by [`plot-methQTL-clocks.R`](plot-methQTL-clocks.R) (Figure 2).
 
 
 [`plot-methQTL-clocks.R`](plot-methQTL-clocks.R) generates stacked showing proportions of non-methQTL, iPSC- or PBMC-specific methQTL, or shared methQTL for lists of CpGs in various methylation clocks. (figures not included in final manuscript).
