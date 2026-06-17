@@ -1,9 +1,11 @@
 #!/usr/bin/env Rscript
 
+
 library(data.table)
 library(ggplot2)
 library(ggthemes)
 
+# Import lists of various clock CpG lists
 load('CLOCKS/clock-cpgs.Rdata')
 
 EPIC_cpgs
