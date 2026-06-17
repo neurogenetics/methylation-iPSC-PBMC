@@ -58,3 +58,39 @@ A list of imprinting genes, [`imprinting-genes.txt`](imprinting-genes.txt) was g
 [`imprinting-check.R`](imprinting-check.R) generates density plots for the subset of probes within imprinting genes compared to all non-imprinting genes (Figure 4F).
 
 
+## eQTL catalog for iPSCs
+
+Lists of eQTL were retrieved from 
+
+`download-from-ftp.sh`
+
+`filter-eqtl-threshold.R`
+
+`intersect-eqtl-lists.R`
+
+
+
+# eQTL Catalog for iPSCs
+
+eQTL results were retrieved from the `ftp`
+```bash
+# PhLiPS naive iPSC gene counts expression eQTL
+wget ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/QTS000023/QTD000399/QTD000399.all.tsv.gz
+
+# HipSci naive iPSC gene counts expression eQTL
+wget ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/QTS000016/QTD000361/QTD000361.all.tsv.gz
+
+#iPSCORE naive iPSC gene counts expression eQTL
+wget ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/QTS000017/QTD000366/QTD000366.all.tsv.gz
+```
+and subset to Bonferroni-adjusted significance.
+
+|   Study   |  N rows   | Bonferroni-adjusted threshold   |
+|-----------|-----------|-----------|
+| QTD000361 | 143317269 | `0.05/143317269` = `3.488763e-10` |
+| QTD000366 | 142812959 | `0.05/142812959` = `3.501083e-10` |
+| QTD000399 | 162075245 | `0.05/162075245` = `3.084987e-10` |
+
+[`filter-eqtl-threshold.R`](filter-eqtl-threshold.R) performs Bonferroni-adjustment on each table separately and subsets significant rows. 
+
+[`intersect-eqtl-lists.R`](intersect-eqtl-lists.R) plots eQTL intersection (Figure 4E).
