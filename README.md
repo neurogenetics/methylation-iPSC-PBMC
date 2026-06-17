@@ -1,227 +1,90 @@
-
-
-# Retrieve external data
-```bash
-# module load rclone # if needed
-# Ensure rclone is configured to access the shared drive `LNG_methylation_2024`
-rclone copy --progress LNG_methylation_2024:/adrd_ipsc.imputed.tar .
-rclone copy --progress LNG_methylation_2024:/IPSC_idats.tar.gz .
-rclone copy --progress LNG_methylation_2024:/PBMC_idats.tar.gz .
-rclone copy --progress LNG_methylation_2024:/meffil.sif .
-
-tar -xf adrd_ipsc.imputed.tar --directory DATA/GENOTYPES
-tar -zxf IPSC_idats.tar.gz --directory DATA/IPSC
-tar -zxf PBMC_idats.tar.gz --directory DATA/PBMC
-```
-
-## Gene annotations
-```bash
-wget -O DATA/gencode.v46.basic.annotation.gff3.gz https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_46/gencode.v46.basic.annotation.gff3.gz
-```
-
-
-## `meffil.sif` container
-```bash
-# Set aliases to run plink or king within the container
-alias plink='singularity exec meffi.sif plink'
-alias king='singularity exec meffi.sif king'
-
-# Interactively running R within the container
-singularity exec -H ${PWD} meffil.sif R
-```
-
-# Generate genotype vcfs
-
-```bash
-# Get genotype VCFs for significant probes
-awk 'NR > 1 {print $2}'  methQTL/significant-eQTL-status.tsv | sort -u > DATA/GENOTYPES/methQTL-rsIDs.txt
-
-module load plink/1.9
-
-plink --recode vcf \
-	--bfile DATA/GENOTYPES/adrd_ipsc.imputed.bfile \
-	--keep-allele-order \
-	--output-chr chrM \
-	--out DATA/GENOTYPES/ipsc-methQTL-genotypes \
-	--extract DATA/GENOTYPES/methQTL-rsIDs.txt
-
-# Convert vcf genotype calls to alt-allele dosage
-sed 's@0/0@0@g'  DATA/GENOTYPES/ipsc-methQTL-genotypes.vcf | sed 's@1/1@2@g' | sed 's@0/1@1@g' | sed 's@1/0@1@g' > DATA/GENOTYPES/ipsc-methQTL-dosage.vcf
-```
-
-
-## 01 Create two separate `bfile` with only desired PBMC or IPSC samples
-
-ipsc_samples=$()
-pbmc_samples=$(ids)
-
-NIH001	European	BLSA	5320
-NIH002	European	BLSA	4762
-NIH004	European	BLSA	5784
-NIH005	European	BLSA	4849
-NIH012	African	BLSA	4789
-NIH013	European	BLSA	4738
-NIH014	European	BLSA	7697
-NIH016	European	BLSA	4890
-
-# Make full PBMC sample sheet
-# Make full IPSC sample sheet
-
-Take this file:
-```
-/data/ADRD/2021_07_01.Methylation/Idat.Combined/samplesheet.rematched.afterQC.csv
-```
-
-and remove BLSA samples
-
-# The genotype file correspond to a *.raw file with with 417 samples (139 unique donors) and 52 variants
-
-Exclude samples
-```bash
-# Fixes encoded character and writes pbmc info table
-sed 's/\xa0//g' /data/ADRD/2021_07_01.Methylation/PBMCs/IDATS_PBMC_phase1-2-3/SampleSheet_PBMC_phase1-2-3combined.csv > pbmc_info.csv
-
-# copies ipsc info table
-cp /data/ADRD/2021_07_01.Methylation/Idat.Combined/samplesheet.rematched.csv ipsc_info.tsv  # is actually a tsv file, not csv
-```
-
-```R
-#!/usr/bin/env Rscript
-library(meffil)
-
-pbmc_idats <- '/data/ADRD/2021_07_01.Methylation/Idat.PBMCS'
-ipsc_idats <- '/data/ADRD/2021_07_01.Methylation/Idat.IPSCS'
-
-
-
-pbmc_info <- fread('pbmc_info.csv')
-# Correct GESTALT ID format
-pbmc_info[, 'Basename' := NULL]
-pbmc_info[, Gt_ID := as.numeric(tstrsplit(Donor, split='GT|gt|Gt')[[2]])]
-gt_to_nih_table <- fread('nih_gt_id.tsv')
-setkey(gt_to_nih_table, Gt_ID)
-setkey(pbmc_info, Gt_ID)
-
-pbmc_info <- merge(gt_to_nih_table, pbmc_info)
-pbmc_info[, Sample_Name := NULL]
-
-pbmc_samplesheet <- as.data.table(meffil.create.samplesheet(pbmc_idats))
-pbmc_samplesheet[, Sex := NULL]
-setnames(pbmc_info, 'V1', 'Sample_Name')
-pbmc_samplesheet <- merge(pbmc_samplesheet, pbmc_info, by='Sample_Name')
-
-
-
-ipsc_info <- fread('ipsc_info.tsv')
-
-ipsc_samplesheet <- as.data.table(meffil.create.samplesheet(ipsc_idats))
-ipsc_samplesheet[, Sex := NULL]
-ipsc_samplesheet <- merge(ipsc_samplesheet, ipsc_info, by='Sample_Name')
-
-
-dat <- fread('/data/ADRD/2021_07_01.Methylation/COMBINED/Methylation.sample.sheet.IPSC.tab')
-merge(dat, ipsc_samplesheet, by.x='Basename', by.y='Sample_Name')
-# 207 rows
-
-
-297 pairs of idats in '/data/ADRD/2021_07_01.Methylation/Idat.IPSCS'
-258 sample IDs 
-
-
-
-combined_samplesheet <- rbindlist(list(pbmc_samplesheet, ipsc_samplesheet))
-# combined_samplesheet[, 'Sentrix_Position' := tstrsplit(Sample_Name, '_')[[2]]]
-
-setkey(sample_info, Sample_Name)
-setkey(combined_samplesheet, Sample_Name)
-
-
-sample_info <- fread('sample_sentrix_ID_info.tsv')
-```
-
-
-
-
-## methQTL Analysis with `tensorQTL`
-
-First, generate `.tsv` files to be used by tensorQTL. This is a table containing betas (methylation estimates)
-for one clone per sample, along with cromosome position coordintes and Infinium probe IDs.
-
-```bash
-module load R/4.3 && Rscript scripts/build-covariates.R
-sbatch scripts/tensorQTL.sh IPSC
-sbatch scripts/tensorQTL.sh PBMC
-```
-
-
-
-samplesheet <- meffil.create.samplesheet("/data/ADRD/2021_07_01.Methylation/Idat.PBMCS")
-
-
-# Determine samples to include
-
-# Determine SNPs to include
-```
-
 # README
+This repository contains code associated with the manuscript _Characterization of DNA methylation in PBMCs and donor-matched iPSCs shows age-related methylation is reset during stem cell reprogramming_  by Reed et al.
 
-Code for analysis associated with the publication [_Characterization of DNA methylation in PBMCs and donor-matched iPSCs shows methylation is reset during stem cell reprogramming_](https://doi.org/10.1101/2024.12.13.627515 )
+Methylation beta values are hosted on [Zenodo](https://doi.org/10.5281/zenodo.15191371).
+
+## Container
+A singularity container was used for the `meffil` environment due to complicated installation / dependencies. `plink` and `king` are also available in the singularity container. 
+
+The singularitry definition files [`meffil.def`](meffil.def) and [`tensorqtl.def`](tensorqtl.def) include container specifications. A pre-built images of our `meffil` environment is available at `quay.io` and can be  pulled using the following commands if you have singularity available on your system:
 
 ```bash
-
-
-SNPLIST='INPUT/snp-names.txt'
-BFILE='INPUT/genotypes/adrd_ipsc.imputed.bfile'
-
-module load plink
-    plink --noweb \
-    --bfile ${BFILE} \
-    --extract ${SNPLIST} \
-    --recodeA \
-    --out OUTNAME
-    --noweb
+singularity pull oras://quay.io/datatecnica/meffil
 ```
 
-Samples meeting the following criteria were excluded: 
-(1) samples with a predicted median methylated signal > 3 standard deviations (SD) from the expected, # Default meth.unmeth.outlier.sd
-(2) samples that had > 10% of probes with bead numbers < 3, 
-(3) samples that had > 10% of probes with detection p-value > 0.01, 
-(4) samples with gender mismatch between the reported and predicted gender (sex outlier value > 5 SD from the mean), # sex.outlier.sd default = 3
-(6) samples with a genotype mismatch (samples with genotype concordance < 0.8 were removed). # sample.genotype.concordance.threshold default = 0.9
+We use a `tensorqtl` image pulled from Broad Institute (`francois4/tensorqtl:1.0.9`).
 
-# set QC parameters...
-qc.parameters <- meffil.qc.parameters(
-	beadnum.samples.threshold             = 0.1,
-	detectionp.samples.threshold          = 0.1,
-	detectionp.cpgs.threshold             = 0.1, 
-	beadnum.cpgs.threshold                = 0.1,
-	sex.outlier.sd                        = 5,
-	snp.concordance.threshold             = 0.95,
-	sample.genotype.concordance.threshold = 0.8
-)
+## Genotype preparation
+
+[`prep-plink.sh`](prep-plink.sh) conducts LD-pruning of variants using `plink` and generates PCs with `king` to use as covariates for `meffil` and `tensorQTL`.
+
+## EWAS
+
+[`run-meffil.sh`](run-meffil.sh) is a wrapper for executing  [`meffil.R`](meffil.R) in the prebuilt singularity container for:
+- importing `idat` files
+- performing `mefffil` QC and sample validation
+- calculating methylation beta estimates
+- calculating methylation PCs
+- normalizing methylation beta estimates
+- subsetting to samples with genotype data
+- running EWAS for iPSC and PBMC datasets
+
+[`plot-EWAS.R`](plot-EWAS.R) generates QQ plots, manhattan plots, and methylation plots as a function of age (Figure 3).
 
 
 
-Probe-wise, we excluded CpGs 
-within single nucleotide polymorphisms with a minor allele frequency of >1% located within five nucleotides of the target sites, 
-probes tagging non-unique 3΄-subsequences of 30 or more bases long, 
-cross-reactive probes as previously described (Chen et al., 2013). 
+## MethQTL analysis
 
-Additional EPIC-specific cross-reactive probes were obtained from the Maxprobes R package (version 0.0.2) and removed (McCartney et al., 2016; Pidsley et al., 2016) (see Supplementary Figure 4 for an overview of the QC pipeline). 
 
-Functional normalization was performed using the Meffil R package (version 1.3.3). 
-Principal component analysis was performed on the control matrix and the 20,000 most variable probes. 
-Principal components of the most variable normalized betas corresponding to the iPSC dataset showed a strong batch effect corresponding to the experimental plate.
-The ComBat R package was applied only in this dataset to adjust for this batch effect.
+[`build-covariates.R`](build-covariates.R) imports methylation values and generates properly-formatted phenotype and covariates files for tensorQTL.
 
-## Gene Imprinting
+[`plot-methQTL.R`](plot-methQTL.R) generates scatter plots in Figure 4B,C,D.
 
-A list of imprinting genes, `imprinting-genes.txt` was retrieved from `https://www.geneimprint.com/site/genes-by-species` modified in the following manner:
+[`cell-specific-methQTL.R`](cell-specific-methQTL.R) conducts enrichment (GO, KEGG) analysis and plotting for PBMC or iPSC-specific methQTL (Figure 5A).
+
+[`plot-genotype-specific-methylation.R`](plot-genotype-specific-methylation.R) generates methylation allele dosage plots for sites with shared or cell-type-specific effects of genotype on methylation (i.e. significant slope across genotypes) (Figure 5B,C,D).
+
+[`plot-locus-tracks.R`](plot-locus-tracks.R) generates methylation + locus plots for genes of interest. `ADARB2`, `B3GNTL1`, `HLADPB2` and `SNTG2` (Figure 6).
+
+
+## Clock analysis
+
+[`get-clock-cpgs.R`](get-clock-cpgs.R) is a convenience script to extract lists of CpGs from R's `methylclockData` datasets in `ExperimentHub`. It generates a text file of CpGs for each clock analyzed. Used to generate plots by [`plot-methyl-clocks.R`](plot-methyl-clocks.R) (Figure 2).
+
+
+## Imprinting analysis
+
+A list of imprinting genes, [`imprinting-genes.txt`](imprinting-genes.txt) was generated from `https://www.geneimprint.com/site/genes-by-species` by making the following modifications:
 - Manually found and replaced unknown `?` characters
-- Replaced comma with semicolon: `sed -i 's/, /;/g' imprinting-genes.txt`
+- Replaced comma with semicolon, e.g. `sed 's/, /;/g' imprinting-genes-before-correction.txt > imprinting-genes.txt`
+
+[`imprinting-check.R`](imprinting-check.R) generates density plots for the subset of probes within imprinting genes compared to all non-imprinting genes (Figure 4F).
 
 
-## methQTL
+## eQTL catalog for iPSCs
 
-Methylation beta values are hosted on Zenodo: https://doi.org/10.5281/zenodo.15191371
+Lists of eQTL were retrieved from 
 
+`download-from-ftp.sh`
+
+`filter-eqtl-threshold.R`
+
+`intersect-eqtl-lists.R`
+
+
+
+# eQTL Catalog for iPSCs
+
+eQTL results were retrieved from the `ftp`
+```bash
+# PhLiPS naive iPSC gene counts expression eQTL
+wget ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/QTS000023/QTD000399/QTD000399.all.tsv.gz
+
+# HipSci naive iPSC gene counts expression eQTL
+wget ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/QTS000016/QTD000361/QTD000361.all.tsv.gz
+
+#iPSCORE naive iPSC gene counts expression eQTL
+wget ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/QTS000017/QTD000366/QTD000366.all.tsv.gz
+```
+
+[`filter-eqtl-threshold.R`](filter-eqtl-threshold.R) performs Bonferroni-adjustment on each table separately and subsets significant rows. to be plotted with [`intersect-eqtl-lists.R`](intersect-eqtl-lists.R) (Figure 4E).
