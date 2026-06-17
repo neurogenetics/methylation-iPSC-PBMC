@@ -53,7 +53,7 @@ We use a `tensorqtl` image pulled from Broad Institute (`francois4/tensorqtl:1.0
 
 A list of imprinting genes, [`imprinting-genes.txt`](imprinting-genes.txt) was generated from `https://www.geneimprint.com/site/genes-by-species` by making the following modifications:
 - Manually found and replaced unknown `?` characters
-- Replaced comma with semicolon, e.g. `sed -i 's/, /;/g' imprinting-genes-before-correction.txt > imprinting-genes.txt`
+- Replaced comma with semicolon, e.g. `sed 's/, /;/g' imprinting-genes-before-correction.txt > imprinting-genes.txt`
 
 [`imprinting-check.R`](imprinting-check.R) generates density plots for the subset of probes within imprinting genes compared to all non-imprinting genes (Figure 4F).
 
