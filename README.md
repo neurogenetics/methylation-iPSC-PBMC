@@ -1,4 +1,3 @@
-# Sample QC
 
 
 # Retrieve external data
@@ -20,14 +19,14 @@ tar -zxf PBMC_idats.tar.gz --directory DATA/PBMC
 wget -O DATA/gencode.v46.basic.annotation.gff3.gz https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_46/gencode.v46.basic.annotation.gff3.gz
 ```
 
+
+## `meffil.sif` container
 ```bash
+# Set aliases to run plink or king within the container
 alias plink='singularity exec meffi.sif plink'
 alias king='singularity exec meffi.sif king'
-```
-# Running meffil in container
 
-```bash
-module load singularity
+# Interactively running R within the container
 singularity exec -H ${PWD} meffil.sif R
 ```
 
@@ -46,6 +45,7 @@ plink --recode vcf \
 	--out DATA/GENOTYPES/ipsc-methQTL-genotypes \
 	--extract DATA/GENOTYPES/methQTL-rsIDs.txt
 
+# Convert vcf genotype calls to alt-allele dosage
 sed 's@0/0@0@g'  DATA/GENOTYPES/ipsc-methQTL-genotypes.vcf | sed 's@1/1@2@g' | sed 's@0/1@1@g' | sed 's@1/0@1@g' > DATA/GENOTYPES/ipsc-methQTL-dosage.vcf
 ```
 
@@ -148,8 +148,9 @@ First, generate `.tsv` files to be used by tensorQTL. This is a table containing
 for one clone per sample, along with cromosome position coordintes and Infinium probe IDs.
 
 ```bash
-Rscript ./methQTL.R PBMC
-Rscript ./methQTL.R IPSC
+module load R/4.3 && Rscript scripts/build-covariates.R
+sbatch scripts/tensorQTL.sh IPSC
+sbatch scripts/tensorQTL.sh PBMC
 ```
 
 
@@ -215,8 +216,12 @@ The ComBat R package was applied only in this dataset to adjust for this batch e
 
 ## Gene Imprinting
 
-Retrieved from `https://www.geneimprint.com/site/genes-by-species`
-- Manually find and replace diamond `?` characters
-- `sed 's/, /;/g' imprinting-genes.txt`
-- `sed -i 's/, /;/g' imprinting-genes.txt`
+A list of imprinting genes, `imprinting-genes.txt` was retrieved from `https://www.geneimprint.com/site/genes-by-species` modified in the following manner:
+- Manually found and replaced unknown `?` characters
+- Replaced comma with semicolon: `sed -i 's/, /;/g' imprinting-genes.txt`
+
+
+## methQTL
+
 Methylation beta values are hosted on Zenodo: https://doi.org/10.5281/zenodo.15191371
+

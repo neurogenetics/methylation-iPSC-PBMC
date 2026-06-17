@@ -21,28 +21,22 @@ setnames(genetic_pcs, gsub('^PC', 'Geno_PC', colnames(genetic_pcs)))
 ipsc_samplesheet_file <- 'DATA/ipsc_samplesheet.tsv'
 pbmc_samplesheet_file <- 'DATA/pbmc_samplesheet.tsv'
 
-
+# Import ipsc samplesheets and reformat
 ipsc_samplesheet <- fread(ipsc_samplesheet_file)
 ipsc_samplesheet <- ipsc_samplesheet[Original_source != 'BLSA'][!duplicated(Donor.ID)]
 ipsc_samplesheet <- ipsc_samplesheet[, .SD, .SDcols=c('Donor.ID','age','Sex')]
+ipsc_covs <- merge(genetic_pcs, ipsc_samplesheet, by.x='FID', by.y='Donor.ID')
 
+# Import pbmc samplesheets and reformat
 pbmc_samplesheet <- fread(pbmc_samplesheet_file)
 pbmc_samplesheet <- pbmc_samplesheet[Original_source != 'BLSA'][!duplicated(Donor.ID)]
 pbmc_samplesheet <- pbmc_samplesheet[, .SD, .SDcols=c('Donor.ID','age','Sex')]
-
-
-ipsc_covs <- merge(genetic_pcs, ipsc_samplesheet, by.x='FID', by.y='Donor.ID')
-
-
-
+# merge in cell count preductions
 pbmc_celltypes <- fread('DATA/pbmc-cellcounts.csv')
 setkey(pbmc_celltypes, sample)
-
 pbmc_covs <- merge(genetic_pcs, pbmc_samplesheet, by.x='FID', by.y='Donor.ID')
-
 pbmc_celltypes <- pbmc_celltypes[pbmc_covs$FID]
 pbmc_celltypes[, sample := NULL]
-
 pbmc_covs <- cbind(pbmc_covs, pbmc_celltypes)
 
 
@@ -54,7 +48,7 @@ setnames(ipsc_betas, 'chrm','#chr')
 ipsc_betas[, 'end' := start + 1]
 ipsc_samples <- grep('^NIH', colnames(ipsc_betas), value=T)
 
-# PBMCs
+# PBMC betas subset to match
 pbmc_betas <- fread('MEFFIL/PBMC.beta.tsv')
 pbmc_betas <- merge(EPIC, pbmc_betas, by.x='probeID', by.y='POS')
 setnames(pbmc_betas, 'probeID','phenotype_id')
@@ -62,22 +56,22 @@ setnames(pbmc_betas, 'chrm','#chr')
 pbmc_betas[, 'end' := start + 1]
 pbmc_samples <- grep('^NIH', colnames(pbmc_betas), value=T)
 
-
+# Take samples with full covariate data
 ipsc_covs <- ipsc_covs[FID %in% ipsc_samples]
 pbmc_covs <- pbmc_covs[FID %in% pbmc_samples]
-
 pbmc_betas <- pbmc_betas[, .SD, .SDcols=c('#chr','start','end','phenotype_id',pbmc_covs$FID)]
 setkey(pbmc_betas, '#chr', start)
 ipsc_betas <- ipsc_betas[, .SD, .SDcols=c('#chr','start','end','phenotype_id',ipsc_covs$FID)]
 setkey(ipsc_betas, '#chr', start)
 
-
+# Recode sex as 0 and 1 for iPSC
 ipsc_covs[Sex=='M', sex := '0']
 ipsc_covs[Sex=='F', sex := '1']
 ipsc_covs[, c('IID','FA','MO','SEX','AFF','Sex') := NULL]
 ipsc_covs.df <- as.data.frame(t(ipsc_covs[, -c('FID')]))
 colnames(ipsc_covs.df) <- ipsc_covs$FID
 
+# Recode sex as 0 and 1 for PBMC
 pbmc_covs[Sex=='M', sex := '0']
 pbmc_covs[Sex=='F', sex := '1']
 pbmc_covs[, c('IID','FA','MO','SEX','AFF','Sex') := NULL]
@@ -90,7 +84,6 @@ if(!dir.exists('methQTL')) {dir.create('methQTL')}
 # Output bed format of methylation betas
 fwrite(ipsc_betas, file='methQTL/IPSC.tensorqtl-betas.bed', quote=F, row.names=F, col.names=T, sep='\t')
 fwrite(pbmc_betas, file='methQTL/PBMC.tensorqtl-betas.bed', quote=F, row.names=F, col.names=T, sep='\t')
-
 
 
 # Convert covariates to dataframe and save as .txt

@@ -52,32 +52,6 @@ get_region <- function(DT, CHR, START, STOP) {
     return(DT[chrm==CHR & start %between% c(START, STOP)])
 }
 
-# plot_region_bicolor <- function(DT) {
-#     dt.tmp <- copy (DT)
-#     dt.wide <- dcast(dt.tmp, probeID + chrm + start ~ celltype, value.var='mean_beta')
-#     dt.wide <- dt.wide[! is.na(PBMC) & ! is.na(iPSC)]
-#     dt.wide[, lower_val := min(PBMC, iPSC), by=probeID]
-#     dt.wide[, higher_val := max(PBMC, iPSC), by=probeID]
-#     dt.wide[iPSC > PBMC, clr := '#779bbeff']
-#     dt.wide[iPSC < PBMC, clr := '#cf979aff']
-#     dt.bottom <- copy(dt.wide)
-#     dt.bottom[, loc := 'bottom']
-#     dt.top <- copy(dt.wide)
-#     dt.top[, loc := 'top']
-#     dt <- rbindlist(list(dt.bottom, dt.top))
-#     dt[loc=='bottom', y_start := 0]
-#     dt[loc=='bottom', y_end := lower_val]
-#     dt[loc=='bottom', clr := 'black']
-#     dt[loc=='top', y_start := lower_val]
-#     dt[loc=='top', y_end := higher_val]
-#     ggplot(dt, aes(x=start, xend=start, y=y_start, yend=y_end, color=clr)) +
-#     #facet_grid(celltype~.) +
-#     geom_segment() +
-#     scale_color_identity() +
-#     labs(x='POS', y='% Methylation')
-# }
-
-
 plot_region_twotracks <- function(DT) {
     ggplot(DT, aes(x=start, xend=start, y=0, yend=mean_beta)) +
         facet_grid(celltype~.) +
@@ -92,9 +66,6 @@ plot_region_twotracks <- function(DT) {
 
 mean_betas.long <- melt(mean_betas, measure.vars=c('PBMC','iPSC'), variable.name='celltype', value.name='mean_beta')
 mean_betas.long[, celltype := factor(celltype, levels=c('PBMC','iPSC'))]
-# plot_region_bicolor(get_region(mean_betas, 'chr10',1280e3, 1560e3))
-
-# plot_region_twotracks(get_region(mean_betas, 'chr10',1280e3, 1560e3))
 
 ipsc_signif <- fread('methQTL/IPSC.cis_qtl_significant.txt')$phenotype_id
 pbmc_signif <- fread('methQTL/PBMC.cis_qtl_significant.txt')$phenotype_id
@@ -105,9 +76,6 @@ mean_betas.long[celltype == 'iPSC' & probeID %in% ipsc_signif, eQTL := 'white']
 mean_betas.long[celltype == 'iPSC' & probeID %in% ipsc_unique, eQTL := '#39b3ffff']
 mean_betas.long[celltype == 'PBMC' & probeID %in% pbmc_signif, eQTL := 'white']
 mean_betas.long[celltype == 'PBMC' & probeID %in% pbmc_unique, eQTL := '#ec137bff']
-
-# mean_betas[is.na(eQTL), eQTL := FALSE]
-# gff <- fread('DATA/gencode.v46.basic.annotation.gff3.gz')
 
 library(ggbio)
 library(Homo.sapiens)
@@ -131,6 +99,7 @@ o <- foreach(symbol=unique(txdb$SYMBOL), .combine='rbind', .errorhandling='remov
     data.table('seqnames'=chr, 'start'=minval, 'end'=maxval, 'width'=width, 'strand'=strand, 'SYMBOL'=symbol)
 }
 
+# Convert to gene symbols
 tx2 <- makeGRangesFromDataFrame(o, keep.extra=TRUE)
 genesymbol <- setNames(tx2, tx2$SYMBOL)
 
@@ -160,50 +129,15 @@ get_locus_plots <- function(genename, genesymbol) {
 }
 
 
-
+# get locus plots of interest
 ADARB2 <- get_locus_plots(genename='ADARB2', genesymbol)
-#plot_grid(ADARB2[[1]], ADARB2[[2]], ncol=1, align='v', axis='lr')
-
-
-
 B3GNTL1 <- get_locus_plots(genename='B3GNTL1', genesymbol)
-#plot_grid(B3GNTL1[[1]], B3GNTL1[[2]], ncol=1, align='v', axis='lr')
-
-
 HLADPB2 <- get_locus_plots(genename='HLA-DPB2', genesymbol)
-#plot_grid(HLADPB2[[1]], HLADPB2[[2]], ncol=1, align='v', axis='lr')
-
-
 SNTG2 <- get_locus_plots(genename='SNTG2', genesymbol)
-#plot_grid(SNTG2[[1]], SNTG2[[2]], ncol=1, align='v', axis='lr')
 
-
+# Merge into singular figure
 g.all <- plot_grid(ADARB2[[1]], ADARB2[[2]], B3GNTL1[[1]], B3GNTL1[[2]],HLADPB2[[1]], HLADPB2[[2]],SNTG2[[1]], SNTG2[[2]], ncol=1, align='v', axis='lr')
 ggsave(g.all, file='PLOTS/METHQTL/Fig6.png', width=50, height=50, units='cm')
 ggsave(g.all, file='PLOTS/METHQTL/Fig6.svg', width=50, height=50, units='cm')
 ggsave(g.all, file='PLOTS/METHQTL/Fig6.pdf', width=50, height=50, units='cm')
 
-
-g2 <- plot_region_twotracks(get_region(mean_betas.long, 'chr17',    82950e3,    83060e3)) + labs(y='B3GNTL1 locus', x='chr17 POS')
-g3 <- plot_region_twotracks(get_region(mean_betas.long, 'chr6',     33114e3,    33129e3)) + labs(y='HLA-DPB2 locus', x='chr6 POS')
-g4 <- plot_region_twotracks(get_region(mean_betas.long, 'chr2',     975e3,      1175e3)) + labs(y='SNTG2 locus', x='chr2 POS')
-
-g.all <- plot_grid(g1, g2, g3, g4, ncol=1)
-
-chr10:1280-1560
-chr17:82950-83060
-chr6:33114-33129
-chr2:975-1175
-
-
-# Empty rectangle for gene
-# Filled rectangle for exon
-
-
-mydb <- makeOrganismDbFromUCSC( genome="hg38", 
-                                tablename="knownGene", 
-                                transcript_ids=NULL, 
-                                circ_seqs=NULL, 
-                                url="http://genome.ucsc.edu/cgi-bin/", 
-                                goldenPath.url=getOption("UCSC.goldenPath.url"), 
-                                miRBaseBuild=NA)

@@ -50,19 +50,19 @@ status <- fread('methQTL/significant-eQTL-status.tsv')
 ipsc_methqtl <- fread('methQTL/IPSC.cis_qtl_significant.txt', select=c('phenotype_id','variant_id','maf','qval'))#[maf > 0.4][order(qval)][1:10]
 ipsc_methqtl[, celltype := 'iPSC']
 ipsc_methqtl <- merge(ipsc_methqtl, status, by=c('phenotype_id','variant_id'))
-ipsc_toplot <- ipsc_methqtl[grouping=='iPSC-only'][order(qval)][maf > 0.4][1:5][, .SD, .SDcols=c('phenotype_id','variant_id','grouping')]
+ipsc_to_plot <- ipsc_methqtl[grouping=='iPSC-only'][order(qval)][maf > 0.4][1:5][, .SD, .SDcols=c('phenotype_id','variant_id','grouping')]
 
 pbmc_methqtl <- fread('methQTL/PBMC.cis_qtl_significant.txt', select=c('phenotype_id','variant_id','maf','qval'))#[maf > 0.4][order(qval)][1:10]
 pbmc_methqtl[, celltype := 'PBMC']
 pbmc_methqtl <- merge(pbmc_methqtl, status, by=c('phenotype_id','variant_id'))
-pbmc_toplot <- pbmc_methqtl[grouping=='PBMC-only'][order(qval)][maf > 0.4][1:5][, .SD, .SDcols=c('phenotype_id','variant_id','grouping')]
+pbmc_to_plot <- pbmc_methqtl[grouping=='PBMC-only'][order(qval)][maf > 0.4][1:5][, .SD, .SDcols=c('phenotype_id','variant_id','grouping')]
 
-shared_toplot <- status[grouping=='shared'][order(PBMC,iPSC)][1:5][, .SD, .SDcols=c('phenotype_id','variant_id','grouping')]
+shared_to_plot <- status[grouping=='shared'][order(PBMC,iPSC)][1:5][, .SD, .SDcols=c('phenotype_id','variant_id','grouping')]
 
-all_toplot <- rbindlist(list(shared_toplot, ipsc_toplot, pbmc_toplot))
+all_to_plot <- rbindlist(list(shared_to_plot, ipsc_to_plot, pbmc_to_plot))
 
-o <- foreach(i=1:nrow(all_toplot), .combine='rbind') %do% {
-    get_methylation_effect(all_toplot[i,'grouping'], all_toplot[i,'variant_id'], all_toplot[i,'phenotype_id'])
+o <- foreach(i=1:nrow(all_to_plot), .combine='rbind') %do% {
+    get_methylation_effect(all_to_plot[i,'grouping'], all_to_plot[i,'variant_id'], all_to_plot[i,'phenotype_id'])
 }
 
 o[, grouping := factor(grouping, levels=c('PBMC-only','iPSC-only','shared'))]
@@ -101,6 +101,6 @@ for(i in unique(o$facet_lbl)) {
 }
 
 
-for(i in 1:nrow(all_toplot)) {
-    get_methylation_effect(all_toplot[i,'grouping'], all_toplot[i,'variant_id'], all_toplot[i,'phenotype_id'])
+for(i in 1:nrow(all_to_plot)) {
+    get_methylation_effect(all_to_plot[i,'grouping'], all_to_plot[i,'variant_id'], all_to_plot[i,'phenotype_id'])
 }

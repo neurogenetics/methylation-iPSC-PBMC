@@ -6,10 +6,6 @@
 #SBATCH --mem 50G
 #SBATCH --time 2:00:00
 
-# module load R/4.3
-#echo "Executing: Rscript scripts/meffil-prep-samples.R ${@}"
-#Rscript scripts/meffil-prep-samples.R ${@}
-
 
 #### CHECK SINGULARITY #############################################################################
 if ! command -v singularity &> /dev/null; then
@@ -38,6 +34,4 @@ alias R="singularity exec -H ${PWD} meffil.sif R"
 
 
 
-
-echo "Executing: singularity exec -H ${PWD} meffil.sif Rscript scripts/meffil-prep-samples.R ${@}"
 singularity exec -H ${PWD} meffil.sif Rscript scripts/meffil-prep-samples.R ${@}

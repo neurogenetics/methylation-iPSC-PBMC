@@ -1,0 +1,32 @@
+Bootstrap: docker
+From: francois4/tensorqtl
+
+###############################################################################
+%labels
+###############################################################################
+TensorQTL                 version 1.0.9 
+MAINTAINER                Gennady Denisov
+
+###############################################################################
+%post
+###############################################################################
+apt-get -y update
+apt-get install -y wget vim git make cmake gcc g++ 
+apt-get install -y zlib1g-dev build-essential
+
+# create directory specific to NIH HPC
+mkdir -p /vf /gpfs /spin1 /data /scratch /fdb /lscratch
+# create symbolic links for the NIH HPC systems
+for i in $(seq 1 30)
+do
+   ln -s /gpfs/gsfs${i} /gs${i}
+done
+
+###############################################################################
+%environment
+###############################################################################
+
+export LC_ALL=C
+export PATH=/usr/local/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/CUDA/10.2/targets/x86_64-linux/lib:/usr/local/CUDA/10.2/extras/CUPTI/lib64:/usr/local/CUDA/10.2/nvvm/lib64:/usr/local/CUDA/10.2/lib64/stubs:/usr/local/CUDA/10.2/lib64:/usr/local/cuDNN/7.6.5/CUDA-10.2/lib64:/usr/local/Qt/5.11.3_gcc-7.5.0/plugins/xcbglintegrations:$LD_LINRARY_PATH
+export PYTHONPATH=/usr/local/lib/python3.8/dist-packages:$PYTHONPATH
