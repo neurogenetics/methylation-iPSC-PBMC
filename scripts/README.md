@@ -37,7 +37,7 @@ We use a `tensorqtl` image pulled from Broad Institute (`francois4/tensorqtl:1.0
 
 [`plot-methQTL.R`](plot-methQTL.R) generates scatter plots in Figure 4B,C,D.
 
-[`cell-specific-methQTL.R`](cell-specific-methQTL.R.R) conducts enrichment (GO, KEGG) analysis and plotting for PBMC or iPSC-specific methQTL (Figure 5A).
+[`cell-specific-methQTL.R`](cell-specific-methQTL.R) conducts enrichment (GO, KEGG) analysis and plotting for PBMC or iPSC-specific methQTL (Figure 5A).
 
 [`plot-genotype-specific-methylation.R`](plot-genotype-specific-methylation.R) generates methylation allele dosage plots for sites with shared or cell-type-specific effects of genotype on methylation (i.e. significant slope across genotypes) (Figure 5B,C,D).
 
