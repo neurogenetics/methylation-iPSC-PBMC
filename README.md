@@ -22,7 +22,7 @@ We use a `tensorqtl` image pulled from Broad Institute (`francois4/tensorqtl:1.0
 
 [`run-meffil.sh`](run-meffil.sh) is a wrapper for executing  [`meffil.R`](meffil.R) in the prebuilt singularity container for:
 - importing `idat` files
-- performing `mefffil` QC and sample validation
+- performing `meffil` QC and sample validation
 - calculating methylation beta estimates
 - calculating methylation PCs
 - normalizing methylation beta estimates
