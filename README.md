@@ -61,18 +61,6 @@ A list of imprinting genes, [`imprinting-genes.txt`](imprinting-genes.txt) was g
 [`imprinting-check.R`](imprinting-check.R) generates density plots for the subset of probes within imprinting genes compared to all non-imprinting genes (Figure 4F).
 
 
-## eQTL catalog for iPSCs
-
-Lists of eQTL were retrieved from 
-
-`download-from-ftp.sh`
-
-`filter-eqtl-threshold.R`
-
-`intersect-eqtl-lists.R`
-
-
-
 # eQTL Catalog for iPSCs
 
 eQTL results were retrieved from the `ftp`
